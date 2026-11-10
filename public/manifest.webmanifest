@@ -1,0 +1,55 @@
+{
+  "id": "/",
+  "name": "NERD – نيرد",
+  "short_name": "نيرد",
+  "description": "مساعد دراسي ذكي: ارفع محتواك، لخّصه، اختبر نفسك، ونظّم جدولك.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FFF8E8",
+  "theme_color": "#FFD83D",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "محتواي الدراسي",
+      "short_name": "محتواي",
+      "url": "/content",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "الجدول الدراسي",
+      "short_name": "الجدول",
+      "url": "/schedule",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "إضافة محتوى",
+      "short_name": "إضافة",
+      "url": "/content/new",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

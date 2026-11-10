@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#FFF8E8" />
+    <title>نيرد — لا يوجد اتصال</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        padding: 1.5rem;
+        background: #fff8e8;
+        color: #25251f;
+      }
+      .card {
+        width: min(28rem, 100%);
+        padding: 2rem 1.5rem;
+        text-align: center;
+        background: #fffdf6;
+        border: 2.5px solid #25251f;
+        border-radius: 20px 14px 22px 13px;
+        box-shadow: 4px 4px 0 #25251f;
+      }
+      img { width: 5rem; height: 5rem; }
+      h1 { margin: 1rem 0 0.5rem; font-size: 1.35rem; }
+      p { margin: 0; line-height: 1.9; color: #5c5a50; font-size: 0.95rem; }
+      button {
+        margin-top: 1.25rem;
+        cursor: pointer;
+        padding: 0.7rem 1.5rem;
+        font: inherit;
+        font-weight: 700;
+        color: #25251f;
+        background: #ffd83d;
+        border: 2px solid #25251f;
+        border-radius: 12px 9px 13px 8px;
+        box-shadow: 2px 2px 0 #25251f;
+      }
+      .muted { margin-top: 1rem; font-size: 0.75rem; color: #77736a; }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <img src="/icons/icon-192.png" alt="نيرد" />
+      <h1>لا يوجد اتصال بالإنترنت</h1>
+      <p>نيرد يحتاج اتصالًا لتحميل محتواك ومزامنة تقدمك. تحقّق من الشبكة ثم أعد المحاولة.</p>
+      <button type="button" onclick="location.reload()">إعادة المحاولة</button>
+      <p class="muted">محتواك المحفوظ على الخادم آمن، وسيعود عند عودة الاتصال.</p>
+    </main>
+  </body>
+</html>
