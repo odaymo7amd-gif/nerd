@@ -15,6 +15,9 @@ services:
         value: production
       - key: DATA_DIR
         value: /data
+      # أول حساب يُسجَّل على قاعدة جديدة يأخذ id=1 ويصبح حساب المطوّر.
+      - key: ADMIN_USER_ID
+        value: "1"
       - key: COOKIE_SECURE
         value: "1"
       - key: AI_PROVIDER
