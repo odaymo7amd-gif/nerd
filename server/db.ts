@@ -1,4 +1,4 @@
-import { DatabaseSync } from 'node:sqlite';
+import Database from 'libsql';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,12 +8,29 @@ const dataDir = process.env.DATA_DIR ?? join(here, '..', 'data');
 mkdirSync(dataDir, { recursive: true });
 
 export const dbPath = process.env.DATABASE_PATH ?? join(dataDir, 'nerd.db');
-export const db = new DatabaseSync(dbPath);
 
-db.exec('PRAGMA journal_mode = WAL');
-db.exec('PRAGMA foreign_keys = ON');
-// انتظر بدل الفشل الفوري إذا كان النسخ الاحتياطي أو طلب آخر يكتب للحظة.
-db.exec('PRAGMA busy_timeout = 5000');
+// في Vercel لا يوجد قرص دائم. نستخدم Turso/libSQL عبر الشبكة عند ضبط
+// TURSO_DATABASE_URL، ونبقى على ملف SQLite محلي في التطوير أو Render.
+const remoteUrl = process.env.TURSO_DATABASE_URL?.trim();
+const authToken = process.env.TURSO_AUTH_TOKEN?.trim();
+export const isRemoteDatabase = Boolean(remoteUrl);
+export const db = remoteUrl
+  ? new Database(remoteUrl, authToken ? ({ authToken } as never) : undefined)
+  : new Database(dbPath);
+
+// إعدادات SQLite المحلية. بعضها غير مدعوم على الاتصال البعيد، فلا نُفشل الإقلاع.
+try {
+  db.exec('PRAGMA journal_mode = WAL');
+} catch {
+  // Turso/libSQL البعيد يدير السجل بنفسه.
+}
+try {
+  db.exec('PRAGMA foreign_keys = ON');
+  // انتظر بدل الفشل الفوري إذا كان النسخ الاحتياطي أو طلب آخر يكتب للحظة.
+  db.exec('PRAGMA busy_timeout = 5000');
+} catch {
+  // تجاهل الإعدادات غير المدعومة على القاعدة البعيدة.
+}
 db.exec(readFileSync(join(here, 'schema.sql'), 'utf8'));
 
 // ترحيلات بسيطة تُضاف تلقائيًا لقواعد بيانات موجودة مسبقًا
@@ -63,15 +80,15 @@ db.exec('CREATE INDEX IF NOT EXISTS idx_chunks_book_page ON document_chunks (boo
 export type SQLValue = string | number | null | bigint | Uint8Array;
 
 export function all<T = Record<string, unknown>>(sql: string, ...params: SQLValue[]): T[] {
-  return db.prepare(sql).all(...params) as T[];
+  return db.prepare(sql).all(...(params as never[])) as T[];
 }
 
 export function get<T = Record<string, unknown>>(sql: string, ...params: SQLValue[]): T | undefined {
-  return db.prepare(sql).get(...params) as T | undefined;
+  return db.prepare(sql).get(...(params as never[])) as T | undefined;
 }
 
 export function run(sql: string, ...params: SQLValue[]): { changes: number; lastInsertRowid: number } {
-  const result = db.prepare(sql).run(...params);
+  const result = db.prepare(sql).run(...(params as never[]));
   return {
     changes: Number(result.changes),
     lastInsertRowid: Number(result.lastInsertRowid),
