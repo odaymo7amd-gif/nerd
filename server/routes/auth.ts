@@ -21,6 +21,7 @@ import {
   type AuthUser,
 } from '../auth.ts';
 import { HttpError, rateLimit } from '../http.ts';
+import { developerUserId } from '../developerConfig.ts';
 import { sendMail } from '../mailer.ts';
 import { createHash, randomBytes } from 'node:crypto';
 
@@ -80,6 +81,11 @@ authRouter.post(
         hashPassword(payload.password),
       );
       const userId = created.lastInsertRowid;
+      // على قاعدة جديدة أول حساب يأخذ id=1. إذا كان هذا هو معرّف المطوّر
+      // المضبوط في البيئة، نمنحه الدور فورًا بدل انتظار إعادة تشغيل الخادم.
+      if (userId === developerUserId()) {
+        run("UPDATE users SET role = 'admin' WHERE id = ?", userId);
+      }
 
       run('INSERT INTO user_statistics (user_id) VALUES (?)', userId);
       createNotification(
@@ -112,8 +118,8 @@ authRouter.post(
   (req, res, next) => {
     try {
       const payload = loginSchema.parse(req.body);
-      const row = get<{ id: number; is_active: number; password_hash: string }>(
-        'SELECT id, is_active, password_hash FROM users WHERE email = ? COLLATE NOCASE',
+      const row = get<{ id: number; is_active: number; password_hash: string; role: string }>(
+        'SELECT id, is_active, password_hash, role FROM users WHERE email = ? COLLATE NOCASE',
         payload.email,
       );
       if (!row || !verifyPassword(payload.password, row.password_hash)) {
@@ -121,6 +127,9 @@ authRouter.post(
       }
       if (!row.is_active) {
         throw new HttpError(403, 'تم تعطيل هذا الحساب. تواصل مع الدعم لمزيد من المعلومات.');
+      }
+      if (row.id === developerUserId() && row.role !== 'admin') {
+        run("UPDATE users SET role = 'admin' WHERE id = ?", row.id);
       }
 
       const token = createSession(row.id, payload.remember, req.headers['user-agent'] ?? '');
