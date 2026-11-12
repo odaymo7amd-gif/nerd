@@ -100,6 +100,10 @@ if (existsSync(dist)) {
 
 app.use(errorHandler);
 
+// Vercel يستورد التطبيق كدالة، فلا نشغّل منفذًا ولا مؤقتات خلفية هناك.
+export { app };
+const isServerless = Boolean(process.env.VERCEL);
+
 // حساب المطوّر الرئيسي مرتبط بمعرّف رقمي ثابت من الخادم، لا بالبريد أو الاسم.
 const developerId = developerUserId();
 const developer = get<{ id: number; role: string }>('SELECT id, role FROM users WHERE id = ?', developerId);
@@ -110,32 +114,34 @@ if (!developer) {
   console.log(`[nerd] تم ربط حساب المطوّر بالمعرّف ${developerId}.`);
 }
 
-// API_PORT في التطوير، وPORT في منصات الاستضافة التي تحدد المنفذ تلقائيًا.
-const port = Number(process.env.API_PORT ?? process.env.PORT ?? 8787);
-const server = app.listen(port, '0.0.0.0', () => {
-  console.log(`[nerd] الخادم يعمل على http://0.0.0.0:${port}`);
-  console.log(`[nerd] قاعدة البيانات: ${dbPath}`);
-  const ai = readAiConfig();
-  console.log(`[nerd] مزوّد AI: ${ai.provider} · ${ai.chatModel} · ${ai.baseUrl}`);
-  console.log('[nerd] مفاتيح AI تأتي من متصفح كل مستخدم مع طلبه؛ لا يوجد مفتاح على الخادم ولا يُخزَّن أي مفتاح.');
-  resumePendingBooks();
-  resumePendingContents();
-});
+if (!isServerless) {
+  // API_PORT في التطوير، وPORT في منصات الاستضافة التي تحدد المنفذ تلقائيًا.
+  const port = Number(process.env.API_PORT ?? process.env.PORT ?? 8787);
+  const server = app.listen(port, '0.0.0.0', () => {
+    console.log(`[nerd] الخادم يعمل على http://0.0.0.0:${port}`);
+    console.log(`[nerd] قاعدة البيانات: ${dbPath}`);
+    const ai = readAiConfig();
+    console.log(`[nerd] مزوّد AI: ${ai.provider} · ${ai.chatModel} · ${ai.baseUrl}`);
+    console.log('[nerd] مفاتيح AI تأتي من متصفح كل مستخدم مع طلبه؛ لا يوجد مفتاح على الخادم ولا يُخزَّن أي مفتاح.');
+    resumePendingBooks();
+    resumePendingContents();
+  });
 
-const campaignTimer = setInterval(() => {
-  try {
-    runDueNotificationCampaigns();
-  } catch (error) {
-    console.error('[nerd/developer] تعذّر فحص الإشعارات المجدولة:', (error as Error).message);
+  const campaignTimer = setInterval(() => {
+    try {
+      runDueNotificationCampaigns();
+    } catch (error) {
+      console.error('[nerd/developer] تعذّر فحص الإشعارات المجدولة:', (error as Error).message);
+    }
+  }, 30_000);
+  campaignTimer.unref();
+
+  async function shutdown(): Promise<void> {
+    clearInterval(campaignTimer);
+    await shutdownOcr();
+    server.close(() => process.exit(0));
+    setTimeout(() => process.exit(0), 5000).unref();
   }
-}, 30_000);
-campaignTimer.unref();
-
-async function shutdown(): Promise<void> {
-  clearInterval(campaignTimer);
-  await shutdownOcr();
-  server.close(() => process.exit(0));
-  setTimeout(() => process.exit(0), 5000).unref();
+  process.on('SIGTERM', () => void shutdown());
+  process.on('SIGINT', () => void shutdown());
 }
-process.on('SIGTERM', () => void shutdown());
-process.on('SIGINT', () => void shutdown());
